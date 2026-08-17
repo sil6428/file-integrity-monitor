@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "archtech-file-integrity-monitor"
+version = "1.0.0"
+description = "A small SHA-256 baseline and file-integrity monitoring tool"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "All Rights Reserved" }
+authors = [{ name = "Archtech" }]
+
+[project.scripts]
+fim = "file_integrity_monitor.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]

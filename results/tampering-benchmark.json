@@ -1,0 +1,28 @@
+{
+  "baseline_duration_seconds": 8.23656,
+  "detected_events": {
+    "added": 10,
+    "deleted": 10,
+    "modified": 20,
+    "moved": 5
+  },
+  "detected_total": 45,
+  "detection_rate_percent": 100.0,
+  "environment": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.13"
+  },
+  "expected_events": {
+    "added": 10,
+    "deleted": 10,
+    "modified": 20,
+    "moved": 5
+  },
+  "expected_total": 45,
+  "fixture_files": 500,
+  "generated_at": "2026-08-17T03:55:27+00:00",
+  "hash_algorithm": "sha256",
+  "passed": true,
+  "scan_duration_seconds": 0.784926,
+  "scan_errors": 0
+}
