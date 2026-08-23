@@ -1,5 +1,7 @@
 # File Integrity Monitor
 
+[![Quality checks](https://github.com/sil6428/file-integrity-monitor/actions/workflows/quality.yml/badge.svg)](https://github.com/sil6428/file-integrity-monitor/actions/workflows/quality.yml)
+
 A small Python security project that records trusted SHA-256 file hashes and reports later filesystem changes. It is designed to make the core idea behind file integrity monitoring easy to inspect and reproduce.
 
 ## What it detects
@@ -69,6 +71,27 @@ The generated evidence is written to `results/tampering-benchmark.json`.
 
 The verified run on Python 3.12.13 detected all 45 expected events across 500 fixture files with zero scan errors. Seven automated tests also passed. Runtime measurements are recorded in the JSON evidence because they vary by computer and storage device.
 
+## Example evidence
+
+The repository includes a compact, readable example at [`docs/sample-report.json`](docs/sample-report.json). It demonstrates each change type without requiring a benchmark run.
+
+```text
+Baseline created: 4 files, 51 bytes, 0 errors
+Integrity scan: 1 added, 1 modified, 1 deleted, 1 moved, 0 errors
+```
+
+The JSON report records paths, SHA-256 values, byte sizes, summary counts, the baseline timestamp, and scan errors. This makes the output suitable for review or for a later script that forwards the evidence to another system.
+
+## Design
+
+The monitor has three small layers:
+
+1. `core.py` walks the directory, hashes readable regular files, compares inventories, and infers renames by identical hashes.
+2. `cli.py` validates command arguments, writes deterministic JSON, prints a short summary, and returns script-friendly exit codes.
+3. `tests/test_monitor.py` exercises the comparison logic and command behavior using temporary fixtures.
+
+The project deliberately uses the Python standard library only. Reports are sorted before serialization so repeated scans are easy to diff.
+
 ## Security limitations
 
 This project demonstrates integrity monitoring, not malware prevention.
@@ -82,3 +105,7 @@ This project demonstrates integrity monitoring, not malware prevention.
 - SHA-256 confirms content equality. It does not identify who changed a file or why.
 
 For production use, protect the baseline separately, sign reports, restrict permissions, and combine integrity checks with centralized logging and endpoint monitoring.
+
+## License
+
+Copyright (c) 2026 Affan Shaikh. All rights reserved. The source is public for portfolio review. See [`LICENSE`](LICENSE).

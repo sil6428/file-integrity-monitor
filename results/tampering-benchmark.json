@@ -1,5 +1,5 @@
 {
-  "baseline_duration_seconds": 8.23656,
+  "baseline_duration_seconds": 8.304718,
   "detected_events": {
     "added": 10,
     "deleted": 10,
@@ -20,9 +20,9 @@
   },
   "expected_total": 45,
   "fixture_files": 500,
-  "generated_at": "2026-08-17T03:55:27+00:00",
+  "generated_at": "2026-08-23T04:17:42+00:00",
   "hash_algorithm": "sha256",
   "passed": true,
-  "scan_duration_seconds": 0.784926,
+  "scan_duration_seconds": 0.832963,
   "scan_errors": 0
 }
