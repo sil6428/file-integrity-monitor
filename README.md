@@ -2,7 +2,7 @@
 
 [![Quality checks](https://github.com/sil6428/file-integrity-monitor/actions/workflows/quality.yml/badge.svg)](https://github.com/sil6428/file-integrity-monitor/actions/workflows/quality.yml)
 
-A small Python security project that records trusted SHA-256 file hashes and reports later filesystem changes. It is designed to make the core idea behind file integrity monitoring easy to inspect and reproduce.
+A small Python security project that records trusted SHA-256 file hashes and reports later filesystem changes. It includes a local browser dashboard for visual review and keeps the original command-line workflow for automation.
 
 ## What it detects
 
@@ -21,6 +21,19 @@ Python 3.11 or newer is required. The runtime uses only the Python standard libr
 ```powershell
 python -m pip install -e .
 ```
+
+## Local dashboard
+
+```powershell
+fim dashboard
+```
+
+This opens **Integrity Desk** at `http://127.0.0.1:8765`. Enter the folder to monitor, choose where the baseline and report JSON files should be saved, and review changes by category without reading raw JSON.
+
+- It binds only to the local computer and does not upload files.
+- Paths and evidence remain on the computer running the tool.
+- Every write action requires a random token created for that dashboard session.
+- The interface presents the same deterministic evidence produced by the CLI.
 
 ## Create a trusted baseline
 

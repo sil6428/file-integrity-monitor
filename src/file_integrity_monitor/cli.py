@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 from typing import Sequence
 
 from .core import create_baseline, load_baseline, scan_against_baseline, write_json
@@ -26,12 +25,22 @@ def _parser() -> argparse.ArgumentParser:
     scan.add_argument("--root", help="Optional directory override")
     scan.add_argument("--output", default="fim-report.json", help="Report JSON path")
     scan.add_argument("--exclude", action="append", default=[], help="Additional glob to ignore")
+
+    dashboard = subparsers.add_parser("dashboard", help="open the local browser dashboard")
+    dashboard.add_argument("--port", type=int, default=8765, help="local dashboard port")
+    dashboard.add_argument("--no-browser", action="store_true", help="do not open a browser tab")
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
+        if args.command == "dashboard":
+            from .web import run_dashboard
+
+            run_dashboard(port=args.port, open_browser=not args.no_browser)
+            return 0
+
         if args.command == "baseline":
             baseline = create_baseline(args.root, args.exclude)
             destination = write_json(baseline, args.output)

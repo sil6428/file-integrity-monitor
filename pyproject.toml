@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "affan-file-integrity-monitor"
-version = "1.0.0"
-description = "A small SHA-256 baseline and file-integrity monitoring tool"
+version = "1.1.0"
+description = "A SHA-256 file-integrity application with a local dashboard and CLI"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "All Rights Reserved" }

@@ -11,13 +11,14 @@ import unittest
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from file_integrity_monitor.cli import main
-from file_integrity_monitor.core import (
+from file_integrity_monitor.cli import main  # noqa: E402
+from file_integrity_monitor.core import (  # noqa: E402
     create_baseline,
     load_baseline,
     scan_against_baseline,
     write_json,
 )
+from file_integrity_monitor.web import DashboardController  # noqa: E402
 
 
 class IntegrityMonitorTests(unittest.TestCase):
@@ -126,6 +127,39 @@ class IntegrityMonitorTests(unittest.TestCase):
         self.assertEqual(changed_exit, 2)
         report = json.loads(report_path.read_text(encoding="utf-8"))
         self.assertEqual(report["summary"]["modified"], 1)
+
+    def test_dashboard_creates_and_scans_saved_evidence(self) -> None:
+        self.write("watched.txt", "trusted")
+        baseline_path = Path(self.temporary.name) / "evidence" / "baseline.json"
+        report_path = Path(self.temporary.name) / "evidence" / "report.json"
+        controller = DashboardController()
+
+        baseline_response = controller.baseline(
+            {
+                "root": str(self.root),
+                "baseline_path": str(baseline_path),
+                "excludes": [],
+            }
+        )
+        self.write("watched.txt", "changed")
+        scan_response = controller.scan(
+            {
+                "root": str(self.root),
+                "baseline_path": str(baseline_path),
+                "report_path": str(report_path),
+                "excludes": [],
+            }
+        )
+
+        self.assertEqual(baseline_response["kind"], "baseline")
+        self.assertTrue(baseline_path.is_file())
+        self.assertEqual(scan_response["result"]["summary"]["modified"], 1)
+        self.assertTrue(report_path.is_file())
+
+    def test_dashboard_rejects_missing_required_paths(self) -> None:
+        controller = DashboardController()
+        with self.assertRaisesRegex(ValueError, "root is required"):
+            controller.baseline({"baseline_path": "baseline.json", "excludes": []})
 
 
 if __name__ == "__main__":
