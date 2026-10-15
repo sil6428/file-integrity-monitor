@@ -1,41 +1,68 @@
-# File Integrity Monitor
+<div align="center">
+  <h1>File Integrity Monitor</h1>
+  <p><strong>Create a trusted SHA-256 baseline, scan again, and produce deterministic evidence of filesystem changes.</strong></p>
+  <p>A dependency-free Python security tool with a script-friendly CLI and a local browser dashboard.</p>
 
-[![Quality checks](https://github.com/sil6428/file-integrity-monitor/actions/workflows/quality.yml/badge.svg)](https://github.com/sil6428/file-integrity-monitor/actions/workflows/quality.yml)
+  <p>
+    <a href="https://github.com/sil6428/file-integrity-monitor/actions/workflows/quality.yml"><img alt="Quality checks" src="https://github.com/sil6428/file-integrity-monitor/actions/workflows/quality.yml/badge.svg"></a>
+    <img alt="Python 3.11 or newer" src="https://img.shields.io/badge/Python-3.11%2B-3776ab?logo=python&amp;logoColor=white">
+    <img alt="Standard library runtime" src="https://img.shields.io/badge/Runtime-Standard_library_only-0f766e">
+  </p>
 
-A small Python security project that records trusted SHA-256 file hashes and reports later filesystem changes. It includes a local browser dashboard for visual review and keeps the original command-line workflow for automation.
+  <p>
+    <a href="docs/sample-report.json">Sample evidence</a> ·
+    <a href="results/tampering-benchmark.json">Benchmark result</a> ·
+    <a href="LICENSE">Licence</a>
+  </p>
+</div>
 
 ## What it detects
 
-- Added files
-- Modified files, including same-size content changes
-- Deleted files
-- Moved or renamed files when the SHA-256 content hash remains the same
-- Files that could not be read during a scan
+- **Added files**
+- **Modified files**, including same-size content changes
+- **Deleted files**
+- **Moved or renamed files** when the SHA-256 content hash remains the same
+- **Read failures** that prevented a complete scan
 
-The monitor ignores symbolic links and common development artifacts by default. Additional glob patterns can be supplied from the command line.
+Symbolic links and common development artifacts are ignored by default. Additional exclusion globs can be supplied from the command line.
 
-## Installation
+## How it works
 
-Python 3.11 or newer is required. The runtime uses only the Python standard library.
-
-```powershell
-python -m pip install -e .
+```text
+Chosen directory
+      ↓ hash readable regular files
+Trusted baseline.json
+      ↓ compare a later inventory
+Deterministic report.json
+      ↓
+Added · modified · deleted · moved · errors
 ```
 
-## Local dashboard
+Reports include paths, SHA-256 values, byte sizes, summary counts, the baseline timestamp, and scan errors. Entries are sorted before serialization so repeated runs are easy to inspect and diff.
+
+## Use the local dashboard
+
+Requires Python 3.11 or newer.
 
 ```powershell
+git clone https://github.com/sil6428/file-integrity-monitor.git
+cd file-integrity-monitor
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -e .
 fim dashboard
 ```
 
-This opens **Integrity Desk** at `http://127.0.0.1:8765`. Enter the folder to monitor, choose where the baseline and report JSON files should be saved, and review changes by category without reading raw JSON.
+**Integrity Desk** opens at `http://127.0.0.1:8765`. Choose the directory to monitor, select where the baseline and report should be saved, and review changes by category.
 
-- It binds only to the local computer and does not upload files.
-- Paths and evidence remain on the computer running the tool.
+- The dashboard binds only to the local computer.
+- It does not upload monitored files or scan results.
 - Every write action requires a random token created for that dashboard session.
-- The interface presents the same deterministic evidence produced by the CLI.
+- It presents the same deterministic evidence as the CLI.
 
-## Create a trusted baseline
+## Use the CLI
+
+Create a trusted baseline:
 
 ```powershell
 fim baseline C:\path\to\monitored-folder --output baseline.json
@@ -47,78 +74,78 @@ Add an exclusion when needed:
 fim baseline C:\path\to\monitored-folder --output baseline.json --exclude "logs/**"
 ```
 
-## Scan for changes
+Scan for changes:
 
 ```powershell
 fim scan baseline.json --output report.json
 ```
 
-Exit codes make the command usable in simple scripts:
+Exit codes make the scan usable in automation:
 
-- `0`: scan completed and no changes were found
-- `1`: configuration, read, or scan error
-- `2`: one or more integrity changes were found
+| Code | Meaning |
+| --- | --- |
+| `0` | Scan completed with no detected changes |
+| `1` | Configuration, read, or scan error |
+| `2` | One or more integrity changes were detected |
 
-## Tests
+## Verified evidence
+
+### Automated tests
 
 ```powershell
 python -m unittest discover -s tests -v
 ```
 
-The test suite covers exclusions, clean scans, additions, content changes, deletions, moves, same-size tampering, JSON round trips, and command exit codes.
+The nine-test suite covers exclusions, clean scans, additions, content changes, deletions, moves, same-size tampering, JSON round trips, dashboard safeguards, and command exit codes.
 
-## Controlled benchmark
+### Controlled tampering benchmark
 
 ```powershell
 python scripts/run_benchmark.py
 ```
 
-The benchmark creates 500 temporary fixture files, applies 45 controlled events, and compares detected counts with expected counts:
+The verified benchmark created **500** fixture files, applied **45** controlled events, and detected every expected change with **zero scan errors**:
 
-- 20 modified files
-- 10 deleted files
-- 5 moved files
-- 10 added files
+| Change | Expected | Detected |
+| --- | ---: | ---: |
+| Modified | 20 | 20 |
+| Deleted | 10 | 10 |
+| Moved | 5 | 5 |
+| Added | 10 | 10 |
 
-The generated evidence is written to `results/tampering-benchmark.json`.
+Machine-readable evidence is stored in [`results/tampering-benchmark.json`](results/tampering-benchmark.json). A smaller example showing each change type is available in [`docs/sample-report.json`](docs/sample-report.json).
 
-The verified run on Python 3.12.13 detected all 45 expected events across 500 fixture files with zero scan errors. Seven automated tests also passed. Runtime measurements are recorded in the JSON evidence because they vary by computer and storage device.
+## Security boundaries
 
-## Example evidence
+This project demonstrates integrity monitoring; it is not malware prevention or endpoint detection.
 
-The repository includes a compact, readable example at [`docs/sample-report.json`](docs/sample-report.json). It demonstrates each change type without requiring a benchmark run.
-
-```text
-Baseline created: 4 files, 51 bytes, 0 errors
-Integrity scan: 1 added, 1 modified, 1 deleted, 1 moved, 0 errors
-```
-
-The JSON report records paths, SHA-256 values, byte sizes, summary counts, the baseline timestamp, and scan errors. This makes the output suitable for review or for a later script that forwards the evidence to another system.
-
-## Design
-
-The monitor has three small layers:
-
-1. `core.py` walks the directory, hashes readable regular files, compares inventories, and infers renames by identical hashes.
-2. `cli.py` validates command arguments, writes deterministic JSON, prints a short summary, and returns script-friendly exit codes.
-3. `tests/test_monitor.py` exercises the comparison logic and command behavior using temporary fixtures.
-
-The project deliberately uses the Python standard library only. Reports are sorted before serialization so repeated scans are easy to diff.
-
-## Security limitations
-
-This project demonstrates integrity monitoring, not malware prevention.
-
-- A trusted baseline must be created before monitoring begins.
-- Anyone who can replace both the files and the baseline can bypass the comparison.
-- Files can change while a user-space scan is reading them.
+- The baseline must be created while the files are trusted.
+- Someone who can replace both the monitored files and the baseline can bypass the comparison.
+- Files may change while a user-space scan is reading them.
 - Symbolic links are skipped rather than followed.
-- Moves are inferred by matching identical hashes. When several files share the same content, the monitor pairs matching paths deterministically but cannot prove which file was renamed.
-- There is no real-time kernel event collection or remote alert delivery.
-- SHA-256 confirms content equality. It does not identify who changed a file or why.
+- Moves are inferred from matching content hashes; identical files cannot prove which path was renamed.
+- SHA-256 confirms content equality, not who made a change or why.
+- There is no kernel-level real-time collection or remote alert delivery.
 
-For production use, protect the baseline separately, sign reports, restrict permissions, and combine integrity checks with centralized logging and endpoint monitoring.
+For a production design, protect the baseline separately, sign reports, restrict permissions, and forward evidence to centralized logging.
 
-## License
+## Development
 
-Copyright (c) 2026 Affan Shaikh. All rights reserved. The source is public for portfolio review. See [`LICENSE`](LICENSE).
+### Repository map
+
+| Path | Purpose |
+| --- | --- |
+| `src/file_integrity_monitor/core.py` | Directory walking, hashing, comparison, and deterministic move inference |
+| `src/file_integrity_monitor/cli.py` | Argument validation, evidence writing, summaries, and exit codes |
+| `src/file_integrity_monitor/web.py` | Loopback-only Integrity Desk dashboard |
+| `tests/test_monitor.py` | Core, CLI, dashboard, evidence, and error-path coverage |
+| `scripts/run_benchmark.py` | Reproducible controlled-change benchmark |
+| `docs/sample-report.json` | Compact example of the evidence format |
+
+The runtime uses only the Python standard library.
+
+## Status and licence
+
+Version 1.1.0 is a portfolio and learning release. It is useful for controlled local monitoring and evidence generation, with the limitations above kept explicit.
+
+Copyright © 2026 Affan Shaikh. All rights reserved. The source is public for portfolio review. See [`LICENSE`](LICENSE).
